@@ -1,22 +1,17 @@
 """
-Streamlit dashboard for the Penalty Simulator (Pass 3).
+Streamlit dashboard for the Penalty Simulator.
 
 Design blend:
-  - Direction A: clean modular cards, neutral palette, generous whitespace
-  - Direction D: real illustrated goal mouth for the heatmap, football accents
-  - Direction C: editorial typography and section labels
-
-IMPORTANT IMPLEMENTATION NOTE:
-  All HTML strings sent to st.markdown(..., unsafe_allow_html=True) must have
-  every `style="..."` attribute on a SINGLE LINE. Multi-line attributes confuse
-  Streamlit's HTML parser and cause the markup to render as raw text. This is
-  why styles are pre-built as flat strings before being interpolated.
+  - clean modular cards, neutral palette, generous whitespace
+  - real illustrated goal mouth for the heatmap, football accents
+  - editorial typography and section labels
 
 Run:
     streamlit run dashboard/app.py
 """
 
 import os
+import base64
 import streamlit as st
 import plotly.graph_objects as go
 
@@ -114,7 +109,6 @@ def inject_global_css():
         border:1px solid {COLORS['border']};
         border-radius:8px;
     }}
-    /* Pointer cursor on dropdowns so they feel clickable */
     .stSelectbox > div > div,
     .stSelectbox > div > div * {{
         cursor: pointer !important;
@@ -163,11 +157,28 @@ def silhouette_svg(size: int = 110) -> str:
     )
 
 
-def get_player_photo_html(player_id: int, size: int = 110) -> str:
+@st.cache_data(show_spinner=False)
+def _photo_data_uri(path: str) -> str:
+    """Read a photo file and return it as a base64 data URI. Cached per path."""
+    with open(path, 'rb') as f:
+        data = base64.b64encode(f.read()).decode('ascii')
+    return f"data:image/jpeg;base64,{data}"
+
+
+def get_player_photo_html(player_id, size: int = 110) -> str:
+    # Defensive cast: pandas sometimes returns IDs as floats (5503.0)
+    # which would build the wrong file path.
+    player_id = int(player_id)
     local_path = os.path.join(PHOTOS_DIR, f"{player_id}.jpg")
     if os.path.exists(local_path):
-        img_style = f"border-radius:50%;object-fit:cover;height:{size}px;border:2px solid {COLORS['border']};"
-        return f'<img src="{local_path}" width="{size}" style="{img_style}">'
+        img_style = (
+            f"border-radius:50%;object-fit:cover;height:{size}px;"
+            f"border:2px solid {COLORS['border']};"
+        )
+        return (
+            f'<img src="{_photo_data_uri(local_path)}" '
+            f'width="{size}" style="{img_style}">'
+        )
     return silhouette_svg(size)
 
 
@@ -340,7 +351,6 @@ def render_goal_mouth(zone_probs: dict):
         '</svg>'
     )
 
-    # Build the legend: 6 zone codes mapped to their full names, in a horizontal flow
     legend_item_style = (
         f"display:inline-flex;align-items:center;gap:0.35rem;"
         f"color:{COLORS['text_muted']};font-size:0.72rem;"
@@ -480,6 +490,18 @@ def main():
         selected_keeper = keeper_options[selected]
         st.session_state.selected_keeper = selected_keeper
 
+    # ----- Invalidate stale result when selection changes -----
+    # If the current dropdown selection doesn't match the IDs the last
+    # simulation was run for, drop the cached result so the user has to re-run.
+    if st.session_state.simulation_result is not None:
+        prev_taker_id = st.session_state.simulation_result.get('_taker_id_at_run')
+        prev_keeper_id = st.session_state.simulation_result.get('_keeper_id_at_run')
+        current_taker_id = int(selected_taker['taker_id'])
+        current_keeper_id = int(selected_keeper['keeper_id'])
+        if (prev_taker_id != current_taker_id
+                or prev_keeper_id != current_keeper_id):
+            st.session_state.simulation_result = None
+
     # ----- Context -----
     st.markdown('<div class="section-label" style="margin-top:1.25rem;">Match Context</div>',
                 unsafe_allow_html=True)
@@ -521,6 +543,10 @@ def main():
         with st.spinner("Running simulation…"):
             try:
                 result = simulate(payload)
+                # Tag the result with the IDs it was computed for, so we can
+                # detect selection changes and invalidate it later.
+                result['_taker_id_at_run'] = int(selected_taker['taker_id'])
+                result['_keeper_id_at_run'] = int(selected_keeper['keeper_id'])
                 st.session_state.simulation_result = result
                 st.session_state.history.insert(0, {
                     'taker': selected_taker['taker_name'],
