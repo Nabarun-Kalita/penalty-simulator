@@ -4,3 +4,4 @@ data/processed/
 *.pkl
 /models/
 __pycache__/
+.env
