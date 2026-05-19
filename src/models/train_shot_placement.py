@@ -43,8 +43,8 @@ from itertools import product
 
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import log_loss, accuracy_score, confusion_matrix
-from sklearn.isotonic import IsotonicRegression
 from sklearn.preprocessing import LabelEncoder
+from src.models.calibration import IsotonicMultiClassCalibrator
 
 import xgboost as xgb
 
@@ -63,12 +63,15 @@ N_SPLITS = 5
 RANDOM_STATE = 42
 ZONES = ['TL', 'TC', 'TR', 'BL', 'BC', 'BR']
 
-# Small hyperparameter grid (~12 combinations)
+# Small hyperparameter grid 
 PARAM_GRID = {
-    'max_depth': [3, 5],
+    'max_depth': [3, 4],
     'learning_rate': [0.05, 0.1],
-    'n_estimators': [100, 200],
-    'min_child_weight': [1, 3],
+    'n_estimators': [50, 100],
+    'min_child_weight': [5, 10],
+    'reg_lambda': [1, 5],
+    'subsample': [0.8],
+    'colsample_bytree': [0.8],
 }
 
 
@@ -186,39 +189,6 @@ def grid_search(X, y, param_grid):
     best = min(all_results, key=lambda r: r['logloss_mean'])
     best_params = {k: best[k] for k in keys}
     return best_params, all_results
-
-
-# ============================================================
-# CALIBRATION
-# ============================================================
-
-class IsotonicMultiClassCalibrator:
-    """
-    Per-class isotonic regression. For each class, fits a 1D mapping
-    from raw probability to calibrated probability, then renormalizes
-    so the row sums to 1.
-    """
-
-    def __init__(self):
-        self.calibrators = []
-
-    def fit(self, proba, y_true, n_classes):
-        self.calibrators = []
-        for c in range(n_classes):
-            iso = IsotonicRegression(out_of_bounds='clip')
-            iso.fit(proba[:, c], (y_true == c).astype(int))
-            self.calibrators.append(iso)
-        return self
-
-    def predict_proba(self, proba):
-        calibrated = np.zeros_like(proba)
-        for c, iso in enumerate(self.calibrators):
-            calibrated[:, c] = iso.predict(proba[:, c])
-        # Renormalize per row (isotonic per-class doesn't preserve sum-to-1)
-        row_sums = calibrated.sum(axis=1, keepdims=True)
-        # Avoid divide-by-zero for degenerate rows
-        row_sums[row_sums == 0] = 1
-        return calibrated / row_sums
 
 
 # ============================================================

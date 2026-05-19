@@ -42,8 +42,8 @@ from itertools import product
 
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import log_loss, accuracy_score, confusion_matrix
-from sklearn.isotonic import IsotonicRegression
 from sklearn.preprocessing import LabelEncoder
+from src.models.calibration import IsotonicMultiClassCalibrator
 
 import xgboost as xgb
 
@@ -63,12 +63,15 @@ RANDOM_STATE = 42
 OUTCOME_CLASSES = ['GOAL', 'OVER', 'POST', 'SAVED', 'WIDE']  # 5 classes, alphabetical
 ZONES = ['TL', 'TC', 'TR', 'BL', 'BC', 'BR']
 
-# Small hyperparameter grid (~16 combos)
+# Small hyperparameter grid 
 PARAM_GRID = {
-    'max_depth': [3, 5],
+    'max_depth': [3, 4],
     'learning_rate': [0.05, 0.1],
-    'n_estimators': [100, 200],
-    'min_child_weight': [1, 3],
+    'n_estimators': [50, 100],
+    'min_child_weight': [5, 10],
+    'reg_lambda': [1, 5],
+    'subsample': [0.8],
+    'colsample_bytree': [0.8],
 }
 
 
@@ -205,31 +208,6 @@ def grid_search(X, y, param_grid, n_classes):
     best = min(all_results, key=lambda r: r['logloss_mean'])
     best_params = {k: best[k] for k in keys}
     return best_params, all_results
-
-
-# ============================================================
-# CALIBRATION
-# ============================================================
-
-class IsotonicMultiClassCalibrator:
-    def __init__(self):
-        self.calibrators = []
-
-    def fit(self, proba, y_true, n_classes):
-        self.calibrators = []
-        for c in range(n_classes):
-            iso = IsotonicRegression(out_of_bounds='clip')
-            iso.fit(proba[:, c], (y_true == c).astype(int))
-            self.calibrators.append(iso)
-        return self
-
-    def predict_proba(self, proba):
-        calibrated = np.zeros_like(proba)
-        for c, iso in enumerate(self.calibrators):
-            calibrated[:, c] = iso.predict(proba[:, c])
-        row_sums = calibrated.sum(axis=1, keepdims=True)
-        row_sums[row_sums == 0] = 1
-        return calibrated / row_sums
 
 
 # ============================================================
