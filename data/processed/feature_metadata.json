@@ -1,0 +1,72 @@
+{
+  "target_columns": {
+    "outcome_5class": "outcome_category",
+    "zone_6class": "zone"
+  },
+  "taker_features_loo": [
+    "taker_total_penalties_loo",
+    "taker_conversion_rate_loo",
+    "taker_shootout_conversion_rate_loo",
+    "taker_in_game_conversion_rate_loo",
+    "taker_must_score_conversion_rate_loo",
+    "taker_right_foot_pct_loo",
+    "taker_left_foot_pct_loo",
+    "taker_zone_entropy_loo",
+    "taker_career_age_years",
+    "taker_zone_TL_prob_loo",
+    "taker_zone_TC_prob_loo",
+    "taker_zone_TR_prob_loo",
+    "taker_zone_BL_prob_loo",
+    "taker_zone_BC_prob_loo",
+    "taker_zone_BR_prob_loo"
+  ],
+  "keeper_features_loo": [
+    "keeper_total_penalties_faced_loo",
+    "keeper_save_rate_loo",
+    "keeper_shootout_save_rate_loo",
+    "keeper_in_game_save_rate_loo",
+    "keeper_save_rate_TL_loo",
+    "keeper_save_rate_TC_loo",
+    "keeper_save_rate_TR_loo",
+    "keeper_save_rate_BL_loo",
+    "keeper_save_rate_BC_loo",
+    "keeper_save_rate_BR_loo"
+  ],
+  "context_features": [
+    "is_shootout_int",
+    "shootout_pressure_code",
+    "game_state_code",
+    "score_diff_at_penalty",
+    "minute",
+    "is_high_pressure",
+    "is_left_foot_int",
+    "is_right_foot_int"
+  ],
+  "zone_features": [
+    "zone_is_corner",
+    "zone_is_top",
+    "zone_is_left",
+    "zone_is_right",
+    "zone_is_center",
+    "keeper_save_rate_at_zone_loo",
+    "taker_zone_prob_at_zone_loo",
+    "matchup_gap_loo"
+  ],
+  "rows_train": 1001,
+  "rows_test": 64,
+  "outcome_classes": [
+    "GOAL",
+    "OVER",
+    "POST",
+    "SAVED",
+    "WIDE"
+  ],
+  "zone_classes": [
+    "TL",
+    "TC",
+    "TR",
+    "BL",
+    "BC",
+    "BR"
+  ]
+}

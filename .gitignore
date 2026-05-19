@@ -1,8 +1,5 @@
 data/cache/
 data/raw/
-data/processed/
 *.pkl
-/models/
 __pycache__/
 .env
-assets/
