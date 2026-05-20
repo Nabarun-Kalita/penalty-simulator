@@ -47,6 +47,9 @@ pyyaml==6.0.2
 # ===== Image processing =====
 Pillow==10.4.0
 
+# ===== API Deployment =====
+huggingface_hub==1.15.0 
+
 # ===== Code Quality (Optional) =====
 black==24.10.0
 ruff==0.7.1

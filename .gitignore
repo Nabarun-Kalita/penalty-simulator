@@ -5,3 +5,4 @@ __pycache__/
 .env
 data/processed/train_features.parquet
 data/processed/test_features.parquet
+*.pkl
