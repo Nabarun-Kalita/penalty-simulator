@@ -4,7 +4,7 @@
 
 **[🌐 Live Dashboard](https://fifa-penalty-simulator.streamlit.app/)** · **[🔌 API Docs](https://nabs7-fifa-penalty-simulator-api.hf.space/docs)** · **[🤖 Models on HF](https://huggingface.co/nabs7/penalty-simulator-models)**
 
-![Dashboard screenshot](assets\dashboard_picture\dash_pic.png)
+![Dashboard screenshot](assets/dashboard_picture/dash_pic.png)
 
 ---
 
